@@ -11,6 +11,7 @@ use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\SirkulasiController;
+use App\Http\Controllers\Soap\LibrarySoapController;
 use App\Http\Controllers\UsulanController;
 use Illuminate\Support\Facades\Route;
 
@@ -65,3 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('buku', BukuController::class)->middleware('role:pustakawan,staf_akademik');
     Route::resource('kategori', KategoriController::class)->middleware('role:pustakawan,staf_akademik');
 });
+
+// Layanan SOAP legacy (Minggu 9): publik, dikecualikan dari CSRF di bootstrap/app.php
+Route::get('/soap/sipus.wsdl', [LibrarySoapController::class, 'wsdl']);
+Route::post('/soap/sipus', [LibrarySoapController::class, 'handle']);
