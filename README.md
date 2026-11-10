@@ -4,7 +4,7 @@
 |---|---|
 | **Nama Mahasiswa** | Fredrick Laurensius Aritonang |
 | **NIM** | 12S24001 |
-| **Kelas** | 13SI1 |
+| **Kelas** | 13SI 1 |
 | **Program Studi** | Sistem Informasi |
 | **Mata Kuliah** | Pemrograman dan Pengujian Aplikasi Web (12S3101) |
 | **Dosen Pengampu** | Chandro Pardede, S.Kom., M.Sc. |
@@ -16,6 +16,7 @@ Antarmuka web Blade Minggu 5 dan 6 tetap berfungsi dan tidak diubah.
 ---
 
 # Minggu 9: Web Services (SOAP dan RESTful API v1)
+
 ## 1. Analisis Kebutuhan dan Kelayakan Web Services
 
 UPT Perpustakaan IT Del memiliki tiga kebutuhan integrasi lintas sistem. Aplikasi web Blade (Minggu 5 dan 6) melayani
@@ -119,8 +120,15 @@ Berkas `.env` dan folder `vendor/` tidak di-commit. `.env.example` memuat `OPENL
 
 ### Data uji SOAP
 
-Status `is_cleared` mengikuti data peminjaman di database. Setelah `migrate:fresh --seed`, cari NIM yang masih memiliki
-pinjaman aktif dengan query berikut:
+Status `is_cleared` mengikuti data peminjaman di database. Koleksi Postman memakai dua variabel:
+
+| Variabel | Nilai awal | Fungsi | Hasil yang diharapkan |
+|---|---|---|---|
+| `nim_aktif` | `12S24001` | NIM yang masih memiliki pinjaman aktif (2 pinjaman aktif dari `TransaksiSeeder`) | `is_cleared=false`, `active_loans=2` (request S2) |
+| `nim_bersih` | `12S24002` | NIM tanpa pinjaman aktif (seluruh pinjaman sudah dikembalikan) | `is_cleared=true`, `active_loans=0` (request S3) |
+
+Status peminjaman berubah setiap kali sirkulasi diuji (misalnya pengembalian buku), sehingga hasil S2 dan S3 dapat bergeser dari
+nilai awal. Bila itu terjadi, cari NIM yang saat ini masih memiliki pinjaman aktif dengan query berikut, lalu isi variabel `nim_aktif` dengan NIM tersebut:
 
 ```sql
 SELECT nim_peminjam, COUNT(*) AS jumlah
@@ -129,12 +137,11 @@ WHERE status = 'dipinjam'
 GROUP BY nim_peminjam;
 ```
 
-Pada pengujian ini, NIM `12S24030` memiliki pinjaman aktif (`is_cleared=false`), sedangkan NIM `12S24001` sudah tidak
-memiliki pinjaman aktif (`is_cleared=true`). Isi variabel `nim_aktif` di koleksi Postman dengan NIM yang masih memiliki pinjaman aktif.
+Pada tangkapan layar bagian 5(a), request S2 memakai NIM `12S24030` yang saat itu memiliki satu pinjaman aktif.
 
 ### Impor koleksi Postman
 
-1. Postman: **Import**, lalu pilih `docs/SIPUS-Del-APIv1.postman_collection.json`.
+1. Postman: **Import**, lalu pilih `docs/SIPUS-Del-API-v1.postman_collection.json`.
 2. Sesuaikan variabel koleksi: `root_url` (contoh `http://sipus-del.test:8000`) dan `base_url` (contoh `http://sipus-del.test:8000/api/v1`).
    Variabel `token` diisi otomatis oleh request **A1 Login**.
 3. Jalankan **Collection Runner** untuk folder 1 sampai 7 secara berurutan. Koleksi berisi 43 request dengan skrip uji otomatis
@@ -154,7 +161,7 @@ curl -i "http://sipus-del.test:8000/api/v1/bukus?tersedia=1&sort=-stok&per_page=
 
 # SOAP
 curl -i -X POST http://sipus-del.test:8000/soap/sipus -H "Content-Type: text/xml; charset=utf-8" \
-  -d '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:m="http://sipus.del.ac.id/soap/library"><soap:Body><m:CheckClearanceStatusRequest><m:nim_peminjam>12S24030</m:nim_peminjam></m:CheckClearanceStatusRequest></soap:Body></soap:Envelope>'
+  -d '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:m="http://sipus.del.ac.id/soap/library"><soap:Body><m:CheckClearanceStatusRequest><m:nim_peminjam>12S24001</m:nim_peminjam></m:CheckClearanceStatusRequest></soap:Body></soap:Envelope>'
 ```
 
 > Pengguna PowerShell: ketik `curl.exe`, bukan `curl` (alias `Invoke-WebRequest`).
@@ -279,7 +286,7 @@ Token sudah dihapus (revoke) setelah praktikum.
 | REST Provider katalog buku | 25% | `BukuApiController`, `BukuResource`, `KategoriResource`, `routes/api.php` |
 | Sirkulasi ACID dan Bearer Token | 30% | `PeminjamanApiController`, `AuthTokenController`, migrasi `personal_access_tokens` |
 | HATEOAS, error RFC 7807, REST Consumer | 15% | `BukuResource`, `PeminjamanResource`, `bootstrap/app.php`, `app/Support/ProblemDetails.php`, `ReferensiEksternalController` |
-| OpenAPI, Postman, bukti uji, Git | 15% | `docs/openapi-sipus-v1.yaml`, `docs/SIPUS-Del-APIv1.postman_collection.json`, bagian 4 dan 5 README |
+| OpenAPI, Postman, bukti uji, Git | 15% | `docs/openapi-sipus-v1.yaml`, `docs/SIPUS-Del-API-v1.postman_collection.json`, bagian 4 dan 5 README |
 
 ## 7. Struktur Berkas Minggu 9
 
@@ -295,7 +302,7 @@ bootstrap/app.php            # routing api, pengecualian CSRF untuk soap/*, hand
 routes/api.php               # rute REST v1
 database/migrations/..._create_personal_access_tokens_table.php
 docs/openapi-sipus-v1.yaml
-docs/SIPUS-Del-APIv1.postman_collection.json
+docs/SIPUS-Del-API-v1.postman_collection.json
 docs/img/week9/              # screenshot bukti uji
 ```
 
